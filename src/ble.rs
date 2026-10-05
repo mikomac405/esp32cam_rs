@@ -1,14 +1,15 @@
+use esp32_nimble::utilities::mutex::Mutex;
 use esp32_nimble::utilities::BleUuid;
 use esp32_nimble::{BLEAdvertising, BLEServer, NimbleProperties};
 use lazy_static::lazy_static;
-use log::warn;
+use log::{info, warn};
 
 pub static UUID_BLE_SERVICE_STR: &str = "io.test.ble"; // up-to 16 bytes
-pub static UUID_BLE_UPTIME_CHARA_STR: &str = "uptime"; // up-to 16 bytes
+pub static UUID_BLE_CTRL_CHAR_STR: &str = "control"; // up-to 16 bytes
 
 lazy_static! {
     pub static ref UUID_BLE_SERVICE: BleUuid = str_to_uuid(UUID_BLE_SERVICE_STR);
-    pub static ref UUID_BLE_UPTIME_CHARA: BleUuid = str_to_uuid(UUID_BLE_UPTIME_CHARA_STR);
+    pub static ref UUID_BLE_CTRL_CHAR: BleUuid = str_to_uuid(UUID_BLE_CTRL_CHAR_STR);
 }
 
 pub fn str_to_uuid(s: &str) -> BleUuid {
@@ -24,58 +25,46 @@ pub fn str_to_uuid(s: &str) -> BleUuid {
     BleUuid::from_uuid128(arr)
 }
 
-pub async fn ble_advertise_task(
+pub fn ble_advertise_config(
     name: &str,
     server: &mut BLEServer,
-    advertising: &mut BLEAdvertising,
+    advertising: &Mutex<BLEAdvertising>,
 ) {
     server.on_connect(|server, desc| {
         server
             .update_conn_params(desc.conn_handle(), 24, 48, 0, 60)
             .expect("server.update_conn_params");
     });
-    //    server.on_disconnect(|desc, reason| {
-    //        info!("Client disconnected ({:X})", reason);
-    //    });
+    server.on_disconnect(|_desc, reason| {
+        info!("Client disconnected ({:?})", reason);
+    });
     let service = server.create_service(*UUID_BLE_SERVICE);
 
-    let notifying_characteristic = service.lock().create_characteristic(
-        *UUID_BLE_UPTIME_CHARA,
-        NimbleProperties::READ | NimbleProperties::NOTIFY,
+    let writable_characteristic = service.lock().create_characteristic(
+        *UUID_BLE_CTRL_CHAR,
+        NimbleProperties::READ | NimbleProperties::WRITE,
     );
-    notifying_characteristic.lock().set_value(b"uptime: 0");
+    writable_characteristic
+        .lock()
+        .on_read(move |_, _| {
+            ::log::info!("Read from writable characteristic.");
+        })
+        .on_write(|args| {
+            ::log::info!(
+                "Wrote to writable characteristic: {:?} -> {:?}",
+                args.current_data(),
+                args.recv_data()
+            );
+        });
 
     advertising
+        .lock()
         .set_data(
             esp32_nimble::BLEAdvertisementData::new()
                 .name(name)
                 .add_service_uuid(*UUID_BLE_SERVICE),
         )
         .unwrap();
-
-    // advertising
-    //     .set_data(
-    //         BLEAdvertisementData::new()
-    //             .name(name)
-    //             .add_service_uuid(*UUID_BLE_SERVICE),
-    //     )
-    //     .unwrap();
-
-    advertising.start().expect("ble_advertising.start()");
-
-    let mut counter: u128 = 0;
-
-    loop {
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-        let mut guard = notifying_characteristic.lock();
-        guard
-            .set_value(format!("uptime: {counter}").as_bytes())
-            .notify();
-        drop(guard);
-
-        counter += 1;
-    }
 }
 
 // pub async fn do_ble_scan(

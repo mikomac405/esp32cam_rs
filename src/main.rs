@@ -1,6 +1,9 @@
 use anyhow::Result;
 
+use esp32_nimble::BLEDevice;
+use esp_idf_hal::delay::FreeRtos;
 use esp_idf_svc::hal::peripherals::Peripherals;
+use espcam::ble::ble_advertise_config;
 use espcam::espcam::Camera;
 
 fn main() -> Result<()> {
@@ -8,7 +11,6 @@ fn main() -> Result<()> {
     esp_idf_svc::log::EspLogger::initialize_default();
 
     let peripherals = Peripherals::take().unwrap();
-
     let camera = Camera::new(
         peripherals.pins.gpio32,
         peripherals.pins.gpio0,
@@ -29,7 +31,11 @@ fn main() -> Result<()> {
         esp_idf_sys::camera::framesize_t_FRAMESIZE_UXGA,
     )
     .unwrap();
-
+    let ble_device = BLEDevice::take();
+    let ble_advertising = ble_device.get_advertising();
+    let server = ble_device.get_server();
+    ble_advertise_config("EPS32", server, ble_advertising);
+    ble_advertising.lock().start()?;
     loop {
         let framebuffer = camera.get_framebuffer();
 
@@ -39,10 +45,10 @@ fn main() -> Result<()> {
             println!("height: {}", framebuffer.height());
             println!("len: {}", framebuffer.data().len());
             println!("format: {}", framebuffer.format());
-
-            std::thread::sleep(std::time::Duration::from_millis(1000));
+            FreeRtos::delay_ms(1000);
         } else {
             log::info!("no framebuffer");
         }
+        FreeRtos::delay_ms(10);
     }
 }

@@ -277,7 +277,8 @@ impl<'a> Camera<'a> {
         let config = camera::camera_config_t {
             pin_pwdn: pin_pwdn.pin() as i32,
             pin_xclk: pin_xclk.pin() as i32,
-            pin_reset: 0xff,
+            // The camera driver uses -1 for an unconnected reset pin.
+            pin_reset: -1,
 
             pin_d0: pin_d0.pin() as i32,
             pin_d1: pin_d1.pin() as i32,
