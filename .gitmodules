@@ -1,3 +1,6 @@
 [submodule "components/esp32-camera"]
 	path = components/esp32-camera
 	url = https://github.com/espressif/esp32-camera.git
+[submodule "components/object-detection/edge-impulse-sdk"]
+	path = components/object-detection/edge-impulse-sdk
+	url = https://github.com/edgeimpulse/inferencing-sdk-cpp.git

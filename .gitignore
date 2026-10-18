@@ -4,3 +4,9 @@
 
 cfg.toml
 src/wifi_config.rs
+
+# Edge Impulse model export: licensed under the Edge Impulse ToS, not
+# redistributable. Export it yourself (see README) - never commit it.
+components/object-detection/model-parameters/
+components/object-detection/tflite-model/
+components/object-detection/README.txt

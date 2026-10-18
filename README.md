@@ -13,6 +13,26 @@ git submodule update --init
 
 The first build creates `src/wifi_config.rs` from `src/wifi_config.rs.example`; fill in your credentials there. The file is git-ignored, so they never get committed.
 
+### Object detection model (Edge Impulse)
+
+The can detector runs an Edge Impulse FOMO model. The Edge Impulse SDK is a git submodule (`components/object-detection/edge-impulse-sdk`), but the model itself is **not in this repository**: Edge Impulse deployments are licensed under the Edge Impulse Terms of Service and may not be redistributed. Export it yourself:
+
+1. In Edge Impulse Studio, open the project → **Deployment** → **C++ library**, **Quantized (int8)**, EON Compiler on → **Build**.
+2. Unzip and copy **only** `model-parameters/` and `tflite-model/` into `components/object-detection/` (keep this repo's `CMakeLists.txt`; the export's is for Zephyr).
+3. Fix the export's timestamps (they can lie in the future and make ninja loop with `build.ninja still dirty`):
+
+   ```bash
+   command find components/object-detection -newermt "$(date -Iseconds)" -exec touch -c {} +
+   ```
+
+4. Make sure the SDK submodule matches the SDK version the export was built with, then rebuild ESP-IDF (cargo doesn't track C component changes):
+
+   ```bash
+   cargo clean -p esp-idf-sys && cargo build
+   ```
+
+Model settings the firmware expects: 128×128 input, grayscale, resize mode "Fit shortest axis".
+
 ## Telegram bot
 
 ```bash

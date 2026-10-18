@@ -55,6 +55,12 @@ component_dirs = "components/esp32-camera"
 bindings_header = "components/bindings.h"
 bindings_module = "camera"
 
+# Edge Impulse FOMO can detector. No bindings yet: the SDK API is C++
+# (templates), which bindgen can't handle - a small extern "C" wrapper
+# will provide the Rust-facing interface.
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = "components/object-detection"
+
 
 [build-dependencies]
 embuild = { version = "0.33", features = ["espidf"] }
