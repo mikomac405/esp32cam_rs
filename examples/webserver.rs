@@ -47,7 +47,7 @@ fn main() -> Result<()> {
         peripherals.pins.gpio26,
         peripherals.pins.gpio27,
         esp_idf_sys::camera::pixformat_t_PIXFORMAT_JPEG,
-        esp_idf_sys::camera::framesize_t_FRAMESIZE_UXGA,
+        esp_idf_sys::camera::framesize_t_FRAMESIZE_QVGA,
     )
     .unwrap();
 

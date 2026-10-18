@@ -11,7 +11,7 @@ After cloning the repo, download the esp32-camera component
 git submodule update --init
 ```
 
-Modify the file `src/wifi_config.rs` with the correct values
+The first build creates `src/wifi_config.rs` from `src/wifi_config.rs.example`; fill in your credentials there. The file is git-ignored, so they never get committed.
 
 ## Telegram bot
 
